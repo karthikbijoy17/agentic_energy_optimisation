@@ -1,0 +1,2 @@
+Current_State,Recommended_Action,Predicted_Next_State,Reward,Projected_Energy_Saving (%),Confidence (%),Confidence_Level
+0.4-0.0-0.5,Reduce HVAC,"(0.1, 0.0, 0.6)",0.2,75.0,30.54,Low
