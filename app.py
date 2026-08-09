@@ -281,12 +281,15 @@ with tab1:
             ].mean()
 
             # Normalize Reward
+            # Episodic Q-learning rewards are small (energy saving minus
+            # comfort penalty per step), so scale up instead of assuming
+            # a [-1, 1] range.
 
             reward_score = min(
                 100,
                 max(
                     0,
-                    (avg_reward + 1) * 50
+                    avg_reward * 1000
                 )
             )
 
@@ -294,9 +297,9 @@ with tab1:
 
             beos = round(
                 (
-                    avg_saving * 0.7
+                    avg_saving * 0.6
                     +
-                    reward_score * 0.3
+                    reward_score * 0.4
                 ),
                 1
             )
@@ -356,10 +359,35 @@ with tab1:
                     "Equipment Intensive",
 
                 "Do Nothing":
-                    "Already Efficient"
+                    "Balanced Operation"
             }
 
             building_profile = profile_map.get(
+                top_action,
+                "Balanced Operation"
+            )
+
+            # Short label for the narrow KPI metric card so it doesn't
+            # get visually truncated (e.g. "Balanced Operati...").
+            # Full wording ("building_profile") is still used everywhere
+            # else -- Executive Summary, Personality, Research Findings.
+
+            profile_short_map = {
+
+                "Reduce HVAC":
+                    "HVAC Heavy",
+
+                "Reduce Lighting":
+                    "Lighting Heavy",
+
+                "Check Equipment":
+                    "Equipment Heavy",
+
+                "Do Nothing":
+                    "Balanced"
+            }
+
+            building_profile_short = profile_short_map.get(
                 top_action,
                 "Balanced"
             )
@@ -399,8 +427,16 @@ with tab1:
 
                 st.metric(
                     "Building Profile",
-                    building_profile
+                    building_profile_short,
+                    help=building_profile
                 )
+
+            st.caption(
+                f"ℹ️ **BEOS** (Building Energy Optimization Score) combines "
+                f"projected energy saving (60%) and RL reward performance "
+                f"(40%) into a single 0–100 building efficiency score. "
+                f"Optimization opportunity level: **{opportunity}**."
+            )
 
             st.divider()
 
@@ -410,16 +446,19 @@ with tab1:
 
             st.info(
                 f"""
-                The building shows a BEOS score of {beos}/100 with a
-                {grade} performance rating.
+                The building achieved a BEOS score of {beos}/100,
+                corresponding to a {grade} performance rating.
 
-                The RL agent identified an average optimization
-                opportunity of {avg_saving:.1f}%.
+                The reinforcement learning agent identified an
+                average projected energy saving of {avg_saving:.1f}% across
+                all evaluated building states.
 
-                The dominant operational pattern is
-                '{building_profile}'.
+                The dominant operational profile is
+                '{building_profile}', indicating that most operating
+                conditions require minimal corrective action while
+                selected states benefit from targeted optimization.
 
-                Most optimization recommendations focus on
+                The most frequently recommended action is
                 '{top_action}'.
                 """
             )
@@ -479,10 +518,15 @@ with tab1:
             else:
 
                 personality = """
-                Balanced Energy Consumer
+                Balanced Operation
 
-                No major inefficiencies were detected.
-                Energy consumption appears relatively balanced.
+                The reinforcement learning agent recommends
+                maintaining the current operating condition for
+                most observed states.
+
+                Only a smaller set of operating conditions
+                requires optimization, indicating relatively
+                stable building behaviour.
                 """
 
             st.success(personality)
@@ -529,17 +573,13 @@ with tab1:
                 f"""
                 • {len(policy_df)} unique operational states were analyzed.
 
-                • The reinforcement learning agent identified an average
-                optimization opportunity of {avg_saving:.2f}%.
+                • The reinforcement learning agent achieved an average projected energy saving of **{avg_saving:.2f}%**.
 
-                • The dominant optimization strategy was
-                **{top_action}**.
+                • The dominant recommended action was **{top_action}**.
 
-                • The building exhibits a
-                **{building_profile}** energy behavior pattern.
+                • The building exhibits a **{building_profile}** operating profile.
 
-                • The overall BEOS score is
-                **{beos}/100**.
+                • The overall Building Energy Optimization Score (BEOS) is **{beos}/100**.
                 """
             )
 
